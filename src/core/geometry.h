@@ -337,8 +337,8 @@ public:
     }
 
     // Ray Public Data
-    Point o;
-    Vector d;
+    Point o; // Origin
+    Vector d; // Direction
     mutable float mint, maxt;
     float time;
     int depth;
