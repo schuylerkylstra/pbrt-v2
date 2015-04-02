@@ -156,14 +156,18 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
         Cornea.ApplySnellLaw( &xRay );
         Cornea.ApplySnellLaw( &yRay );
 
+        // std::cout << r.o.x << ", " << r.o.y << ", " << r.o.z << "\n";
+        // std::cout << r.d.x << ", " << r.d.y << ", " << r.d.z << "\n";
         Vector ODcam;
         Vector RDcam;
         Point  Impact;
         RasterToCamera( Odir, &ODcam );
         RasterToCamera( r.d, &RDcam );
-        RasterToCamera( r.o, &Impact );
-        *ray = RayDifferential( Pcamera, Normalize(ODcam), 0., INFINITY );
-        // *ray = RayDifferential( Impact, Normalize(RDcam), 0., INFINITY );
+        RasterToCamera( r.o - r.d*5, &Impact );
+        // std::cout << Impact.x << ", " << Impact.y << ", " << Impact.z << "\n";
+        // std::cout << RDcam.x << ", " << RDcam.y << ", " << RDcam.z << "\n";
+        // *ray = RayDifferential( Pcamera, Normalize(ODcam), 0., INFINITY );
+        *ray = RayDifferential( Impact, Normalize(RDcam), 0., INFINITY );
 
         rxNew = xRay.o;
         ryNew = yRay.o;

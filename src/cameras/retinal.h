@@ -49,7 +49,13 @@ struct Lens
 
             // calculate transmition direction
             float dot = Dot(dir, n);
-            Vector t = dir*RefractiveIndex + n*( dot*RefractiveIndex - sqrt(1 - dot*dot*RefractiveIndex*RefractiveIndex) );
+            // std::cout << "DOT: " << dot << "\n";
+
+            Vector t = dir * RefractiveIndex + n * ( dot * RefractiveIndex - sqrt(1 - RefractiveIndex * RefractiveIndex * ( 1 - dot * dot) ) );
+            // std::cout << "T before: " << t.x << ", " << t.y << ", " << t.z << "\n";
+            // std::cout << "Radical: " << 1 - dot * dot * RefractiveIndex * RefractiveIndex << "\n";
+            // t = t + n * ( dot * RefractiveIndex - sqrt(1 - RefractiveIndex * RefractiveIndex * ( 1 - dot * dot) ) );
+            // std::cout << "T after: " << t.x << ", " << t.y << ", " << t.z << "\n";
 
             // update the ray
             r->o = Impact;
