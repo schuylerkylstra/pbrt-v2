@@ -2,9 +2,9 @@ Film "image" "integer xresolution" [510] "integer yresolution" [250]
 "string filename" "MDWithBlur.exr"
 #"string filename" "ControlWithBlur.exr"
 
-Sampler "adaptive"
+#Sampler "adaptive"
 
-#Sampler "lowdiscrepancy" "integer pixelsamples" [1]
+Sampler "lowdiscrepancy" "integer pixelsamples" [1]
 
 
 

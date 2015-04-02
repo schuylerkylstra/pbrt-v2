@@ -8,7 +8,7 @@
 // RetinalCamera Definitions
 RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float screenWindow[4],
 					float sopen, float sclose, Film *film, float pupilradius, float focald, Point nodalP,
-					const float *zVals, const Normal *Normals ) 
+					const float *zVals, const Normal *Normals , float rIndex ) 
 
 	: ProjectiveCamera(cam2world, Orthographic(0., 1.), screenWindow, sopen, sclose, 0.0, focald, film)
 {
@@ -21,15 +21,21 @@ RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float scr
     yResolution = 256;
     NodalPoint  = Point(256.0, 128.0, 0.0);
     PupilRadius = pupilradius;
+    Cornea      = Lens(rIndex, 5.5, NodalPoint);
+    zFlag       = false;
+    nFlag       = false;
+
 
     // set the z values and normals of the retina
     if (zVals) 
     {
+        zFlag = true;
         zValues = new float[numCones];
         memcpy(zValues, zVals, numCones*sizeof(float));
     }
     if (Normals) 
     {
+        nFlag = true;
         rNormals = new Normal[numCones];
         memcpy(rNormals, Normals, numCones*sizeof(Normal));
     }
@@ -37,8 +43,14 @@ RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float scr
 
 RetinalCamera::~RetinalCamera()
 {
-    delete[] zValues;
-    // delete[] rNormals; NEED TO CHANGE THIS LATER
+    if (zFlag)
+    {
+        delete[] zValues;
+    }
+    if (nFlag)
+    {
+        delete[] rNormals;
+    }
 }
 
 
@@ -46,6 +58,7 @@ float RetinalCamera::GenerateRay( const CameraSample &sample, Ray * ray) const
 {
 	// The new Origin =  (sample.imageX, sample.imageY, zVals[sample.imageX + sample.imageY * rowL])
 	// the time should be set to 0
+    // std::cout << "RAY\n";
     int row = int( sample.imageY );
     int col = int( sample.imageX );
     float z = zValues[ row * xResolution + col ];
@@ -54,11 +67,11 @@ float RetinalCamera::GenerateRay( const CameraSample &sample, Ray * ray) const
     Point Pcamera;
     RasterToCamera(Pras, &Pcamera);
 
-    Vector Rdir(NodalPoint - Pras);
-    Vector Cdir;
-    RasterToCamera(Rdir, &Cdir);
+    Vector Dras(NodalPoint - Pras);
+    Vector Dcam;
+    RasterToCamera(Dras, &Dcam);
 
-    *ray = Ray(Pcamera, Normalize(Cdir), 0., INFINITY);
+    *ray = Ray(Pcamera, Normalize(Dcam), 0., INFINITY);
 
     if(PupilRadius > 0.f)
     {
@@ -71,10 +84,14 @@ float RetinalCamera::GenerateRay( const CameraSample &sample, Ray * ray) const
         // compute new ray
         Point Offset( 256.0 + lensU, 128.0 + lensV, 0.0);
         Vector ODir( Offset - Pras );
-        Vector OCdir;
-        RasterToCamera( ODir, &OCdir );
+        *ray = Ray(Pras, ODir, 0., INFINITY);
 
-        ray->d = Normalize( OCdir );
+        Cornea.ApplySnellLaw( ray );
+
+        RasterToCamera( ray->o, &(ray->o) );
+        RasterToCamera( ray->d, &(ray->d) );
+
+        ray->d = Normalize( ray->d );
 
     }
     
@@ -91,6 +108,7 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
         RayDifferential *ray) const {
 
     // Generate raster and camera samples
+    // std::cout << "RAYDIFF\n";
     int row = int( sample.imageY );
     int col = int( sample.imageX );
     float z = zValues[ row * xResolution + col ];
@@ -100,12 +118,12 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
     Point Pcamera;
     RasterToCamera(Pras, &Pcamera);
 
-    Vector Rdir(NodalPoint - Pras);
-    Vector Cdir;
-    RasterToCamera(Rdir, &Cdir);
+    Vector Dras(NodalPoint - Pras);
+    Vector Dcam;
+    RasterToCamera(Dras, &Dcam);
 
     // Generate ray differential
-    *ray = RayDifferential( Pcamera, Normalize(Cdir), 0., INFINITY );
+    *ray = RayDifferential( Pcamera, Normalize(Dcam), 0., INFINITY );
 
     ray->time = sample.time;
 
@@ -126,12 +144,32 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
 
         Point NodalOffset(256.0 + lensU, 128.0 + lensV, 0.0);
         Vector Odir( NodalOffset - Pras );
-        Vector OCdir;
-        RasterToCamera( Odir, &OCdir );
-        *ray = RayDifferential( Pcamera, Normalize(OCdir), 0., INFINITY );
 
-        rxDir = NodalOffset - rxNew;
-        ryDir = NodalOffset - ryNew;
+        rxDir = NodalPoint - rxNew;
+        ryDir = NodalPoint - ryNew;
+
+        Ray xRay(rxNew, rxDir, 0., INFINITY);
+        Ray yRay(ryNew, ryDir, 0., INFINITY);
+        Ray r(Pras, Odir, 0., INFINITY);
+
+        Cornea.ApplySnellLaw( &r );
+        Cornea.ApplySnellLaw( &xRay );
+        Cornea.ApplySnellLaw( &yRay );
+
+        Vector ODcam;
+        Vector RDcam;
+        Point  Impact;
+        RasterToCamera( Odir, &ODcam );
+        RasterToCamera( r.d, &RDcam );
+        RasterToCamera( r.o, &Impact );
+        *ray = RayDifferential( Pcamera, Normalize(ODcam), 0., INFINITY );
+        // *ray = RayDifferential( Impact, Normalize(RDcam), 0., INFINITY );
+
+        rxNew = xRay.o;
+        ryNew = yRay.o;
+
+        rxDir = xRay.d;
+        ryDir = yRay.d;
     }
     else
     {
@@ -155,7 +193,7 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
 RetinalCamera* CreateRetinalCamera(const ParamSet &params, const AnimatedTransform &cam2world, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
-    float shutteropen = params.FindOneFloat("shutteropen", 0.f);
+    float shutteropen  = params.FindOneFloat("shutteropen", 0.f);
     float shutterclose = params.FindOneFloat("shutterclose", 1.f);
     
     if (shutterclose < shutteropen) {
@@ -164,11 +202,11 @@ RetinalCamera* CreateRetinalCamera(const ParamSet &params, const AnimatedTransfo
         swap(shutterclose, shutteropen);
     }
 
-    Point nodalpoint  = params.FindOnePoint("nodalpoint", Point(256.0, 128.0, 17.2) );
-    float pupilradius = params.FindOneFloat("pupilradius", 0.f);
-    float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
-    float frame = params.FindOneFloat("frameaspectratio", float(film->xResolution)/float(film->yResolution));
-
+    float frame           = params.FindOneFloat("frameaspectratio", float(film->xResolution)/float(film->yResolution));
+    Point nodalpoint      = params.FindOnePoint("nodalpoint", Point(256.0, 128.0, 17.2) );
+    float pupilradius     = params.FindOneFloat("pupilradius", 0.f);
+    float focaldistance   = params.FindOneFloat("focaldistance", 1e30f);
+    float refractiveIndex = params.FindOneFloat("refractiveindex", 1.33);
     float screen[4];
 
     if (frame > 1.f) {
@@ -184,11 +222,13 @@ RetinalCamera* CreateRetinalCamera(const ParamSet &params, const AnimatedTransfo
         screen[2] = -1.f / frame;
         screen[3] =  1.f / frame;
     }
+
     int swi, zvi, rni;
 
-    const float *sw = params.FindFloat("screenwindow", &swi);
-    const float *zVals = params.FindFloat("zvalues", &zvi);
-    const Normal *Normals = params.FindNormal("normals", &rni);
+    const float *sw         = params.FindFloat("screenwindow", &swi);
+    const float *zVals      = params.FindFloat("zvalues", &zvi);
+    const Normal *Normals   = params.FindNormal("normals", &rni);
+
 
     if (sw && swi == 4)
     {
@@ -196,5 +236,5 @@ RetinalCamera* CreateRetinalCamera(const ParamSet &params, const AnimatedTransfo
     }
     
     return new RetinalCamera(cam2world, screen, shutteropen, shutterclose,
-        film, pupilradius, focaldistance, nodalpoint, zVals, Normals);
+        film, pupilradius, focaldistance, nodalpoint, zVals, Normals, refractiveIndex);
 }
