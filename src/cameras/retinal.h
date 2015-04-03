@@ -100,8 +100,8 @@ public:
     
     
     RetinalCamera(	const AnimatedTransform &cam2world, const float screenWindow[4],
-    				float sopen, float sclose, Film *film, float lensr, float focald, Point nodalP, 
-    				const float *zVals, const Normal *Normals , float rIndex);
+    				float sopen, float sclose, Film *film, float pupilR, Point nodalP, 
+    				const float *zVals, const Normal *Normals , float rIndex, float lensRadius);
     ~RetinalCamera();
     float GenerateRay( const CameraSample &sample, Ray * ) const;
     float GenerateRayDifferential( const CameraSample &sample, RayDifferential *ray ) const;

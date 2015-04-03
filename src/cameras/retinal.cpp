@@ -7,10 +7,10 @@
 
 // RetinalCamera Definitions
 RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float screenWindow[4],
-					float sopen, float sclose, Film *film, float pupilradius, float focald, Point nodalP,
-					const float *zVals, const Normal *Normals , float rIndex ) 
+					float sopen, float sclose, Film *film, float pupilradius, Point nodalP,
+					const float *zVals, const Normal *Normals , float rIndex , float lensRadius) 
 
-	: ProjectiveCamera(cam2world, Orthographic(0., 1.), screenWindow, sopen, sclose, 0.0, focald, film)
+	: ProjectiveCamera(cam2world, Orthographic(0., 1.), screenWindow, sopen, sclose, 0.0, 1e30f, film)
 {
 	// compute differential changes in origin for retinal camera rays
 	dxCamera = RasterToCamera(Vector(1, 0, 0));
@@ -19,9 +19,9 @@ RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float scr
     numCones    = 131072;
     xResolution = 512;
     yResolution = 256;
-    NodalPoint  = Point(256.0, 128.0, 0.0);
+    NodalPoint  = nodalP;
     PupilRadius = pupilradius;
-    Cornea      = Lens(rIndex, 5.5, NodalPoint);
+    Cornea      = Lens(rIndex, lensRadius, NodalPoint);
     zFlag       = false;
     nFlag       = false;
 
@@ -207,9 +207,9 @@ RetinalCamera* CreateRetinalCamera(const ParamSet &params, const AnimatedTransfo
     }
 
     float frame           = params.FindOneFloat("frameaspectratio", float(film->xResolution)/float(film->yResolution));
-    Point nodalpoint      = params.FindOnePoint("nodalpoint", Point(256.0, 128.0, 17.2) );
+    float lensradius      = params.FindOneFloat("lensradius", 5.5);
+    Point nodalpoint      = params.FindOnePoint("nodalpoint", Point(256.0, 128.0, 0.0) );
     float pupilradius     = params.FindOneFloat("pupilradius", 0.f);
-    float focaldistance   = params.FindOneFloat("focaldistance", 1e30f);
     float refractiveIndex = params.FindOneFloat("refractiveindex", 1.33);
     float screen[4];
 
@@ -240,5 +240,5 @@ RetinalCamera* CreateRetinalCamera(const ParamSet &params, const AnimatedTransfo
     }
     
     return new RetinalCamera(cam2world, screen, shutteropen, shutterclose,
-        film, pupilradius, focaldistance, nodalpoint, zVals, Normals, refractiveIndex);
+        film, pupilradius, nodalpoint, zVals, Normals, refractiveIndex, lensradius);
 }

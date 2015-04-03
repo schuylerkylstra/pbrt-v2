@@ -4,7 +4,7 @@ Film "image" "integer xresolution" [510] "integer yresolution" [250]
 
 #Sampler "adaptive"
 
-Sampler "lowdiscrepancy" "integer pixelsamples" [1]
+Sampler "lowdiscrepancy" "integer pixelsamples" [32]
 
 
 
@@ -12,7 +12,7 @@ Sampler "lowdiscrepancy" "integer pixelsamples" [1]
 
 #LookAt 2.3 .1 -.7    .4 0 -.9  0 1 0
 
-Translate 0.0 0.0 17.0
+Translate 0.0 0.0 15.0
 #Rotate -90 1 0 0
 
 
@@ -20,7 +20,7 @@ Translate 0.0 0.0 17.0
 
 
 Include "geometry/MDZListWideAngle.pbrt"
-#Include "geometry/ControlZList.pbrt"
+#Include "geometry/ControlZListWideAngle.pbrt"
 
 
 
