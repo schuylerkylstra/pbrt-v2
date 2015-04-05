@@ -1,7 +1,7 @@
-Film "image"
-#	"integer xresolution" [128] "integer yresolution" [128] 
+Film "image" "integer xresolution" [512] "integer yresolution" [256] 
 LookAt 0 .2 .2    -.02 .1 0  0 1 0
-Camera "perspective" "float fov" [60]
+
+Include "geometry/ControlZList.pbrt"
 
 WorldBegin
 
@@ -20,7 +20,7 @@ Shape "disk" "float radius" [.25]
 AttributeEnd
 
 Material "matte" "color Kd" [.4 .42 .4]
-Shape "trianglemesh" "point P" [ -1 0 -1 1 0 -1 1 0 1 -1 0 1 ]
+Shape "trianglemesh" "point P" [ -1 0 -1    1 0 -1    1 0 1    -1 0 1 ]
 	"integer indices" [ 0 1 2 2 3 0]
 
 Material "measured" "string filename" "brdfs/mystique.brdf"

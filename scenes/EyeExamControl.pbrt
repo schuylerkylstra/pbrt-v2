@@ -1,10 +1,13 @@
 Film "image" "integer xresolution" [512] "integer yresolution" [250] 
-"string filename" "ControlWithBlurNarrow.exr"
+"string filename" "ControlWithBlurNarrow400.exr"
 
-Sampler "lowdiscrepancy" "integer pixelsamples" [32]
+Sampler "lowdiscrepancy" "integer pixelsamples" [1]
 
-Translate 0.0 0.0 25.0
-Include "geometry/ControlZList.pbrt"
+Translate -1.5 .5 800.0
+Rotate -5 1 0 0
+Include "geometry/ControlZListNarrow.pbrt"
+	"float lensradius" 250.
+	"float refractiveindex" 1.005
 
 
 
@@ -24,17 +27,54 @@ WorldBegin
 	Texture "grid" "color" "imagemap" "string filename" ["textures/lines.exr"]
 	#Texture "sgrid" "color" "scale" "texture tex1" "grid" "color tex2" [ .5 .5 .5 ]
 	Material "matte" "texture Kd" "grid"
+	#Shape "trianglemesh" "point P" [ -4 0 -4 4 0 -4 4 0 4 -4 0 4 ]
+	#      "float uv" [ 0 0 5 0 5 5 0 5 ]
+	#	"integer indices" [ 0 1 2 2 3 0]
+
+
+
+	Rotate 45 1 0 0 
+	Rotate -95 1 0 0
+	Translate 0.0 5.0 -20.0
+
 	Shape "trianglemesh" "point P" [ -4 0 -4 4 0 -4 4 0 4 -4 0 4 ]
-	      "float uv" [ 0 0 5 0 5 5 0 5 ]
+	      "float uv" [ 0 0 15 0 15 15 0 15 ]
 		"integer indices" [ 0 1 2 2 3 0]
 
+	ObjectBegin "ball-a"
+		Material "measured"  "string filename" "brdfs/acryl_blue.brdf"
+		Shape "sphere" "float radius" [2]
+	ObjectEnd
+
+	ObjectBegin "ball-b"
+		Shape "sphere" "float radius" [2]
+	ObjectEnd	
 
 
-	Rotate -45 1 0 0
-	Translate 0.0 8.0 0.0
-	Shape "trianglemesh" "point P" [ -4 0 -4 4 0 -4 4 0 4 -4 0 4 ]
-	      "float uv" [ 0 0 5 0 5 5 0 5 ]
-		"integer indices" [ 0 1 2 2 3 0]
+
+	Translate 0 0 20 
+	ObjectInstance "ball-a"
+
+	Translate 1 5 0 
+	ObjectInstance "ball-b"
+
+	Translate 0 0 10 
+	#ObjectInstance "ball-b"
+
+	Translate 0 0 10 
+	#ObjectInstance "ball-a"
+
+	Translate 0 0 10 
+	#ObjectInstance "ball-b"
+
+	Translate 0 0 10 
+	#ObjectInstance "ball-a"
+
+	Translate 0 0 10 
+	#ObjectInstance "ball-b"
+
+	Translate 0 0 10 
+	#ObjectInstance "ball-a"
 
 #	ObjectBegin "dragon-b"
 #		Material "measured"  "string filename" "brdfs/acryl_blue.brdf"

@@ -58,7 +58,7 @@ struct Lens
             // std::cout << "T after: " << t.x << ", " << t.y << ", " << t.z << "\n";
 
             // update the ray
-            r->o = Impact;
+            r->o = Impact - t * LensRadius;
             r->d = t;
         }
     }

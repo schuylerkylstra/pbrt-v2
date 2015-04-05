@@ -1,6 +1,6 @@
-
-AttributeBegin
 Translate 0 -.033 0
+AttributeBegin
+
 Shape "trianglemesh" 
   "point P" [
     -0.0378297 0.12794 0.00447467

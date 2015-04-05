@@ -1,4 +1,4 @@
-Camera "retinal" "float zvalues" [
+Camera "retinal" "float pupilradius" 0.2 "float zvalues" [
 -16.11854681 
 -16.12178653 
 -16.12571033 

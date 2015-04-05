@@ -1,10 +1,12 @@
 Film "image" "integer xresolution" [512] "integer yresolution" [250] 
 "string filename" "MDWithBlurNarrow.exr"
 
-Sampler "lowdiscrepancy" "integer pixelsamples" [32]
+Sampler "lowdiscrepancy" "integer pixelsamples" [1]
 
-Translate 0.0 0.0 25.0
-Include "geometry/MDZListNarrow.pbrt"
+Translate -.5 2.5 17.0
+Include "geometry/ControlZList.pbrt"
+	
+
 
 
 WorldBegin
