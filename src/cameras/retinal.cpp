@@ -19,9 +19,9 @@ RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float scr
     numCones    = 131072;
     xResolution = 512;
     yResolution = 256;
-    NodalPoint  = nodalP;
+    PupilCenter = Point(nodalP.x, nodalP.y, nodalP.z + lensRadius*.65);
     PupilRadius = pupilradius;
-    Cornea      = Lens(rIndex, lensRadius, NodalPoint);
+    Cornea      = Lens(rIndex, lensRadius, nodalP);
     zFlag       = false;
     nFlag       = false;
 
@@ -39,36 +39,6 @@ RetinalCamera::RetinalCamera(const AnimatedTransform &cam2world, const float scr
         rNormals = new Normal[numCones];
         memcpy(rNormals, Normals, numCones*sizeof(Normal));
     }
-
-    // Vector Test1(1, 0, 0);
-    // Vector Test2(0, 1, 0);
-    // Vector Test3(0, 0, 1);
-    // std::cout << "Raster: " << Test1.x << ", " << Test1.y << ", " << Test1.z << "\n";
-    // std::cout << "Raster: " << Test2.x << ", " << Test2.y << ", " << Test2.z << "\n";
-    // std::cout << "Raster: " << Test3.x << ", " << Test3.y << ", " << Test3.z << "\n";
-    // RasterToCamera(Test1, &Test1);
-    // RasterToCamera(Test2, &Test2);
-    // RasterToCamera(Test3, &Test3);
-    // std::cout << "Camera: " << Test1.x << ", " << Test1.y << ", " << Test1.z << "\n";
-    // std::cout << "Camera: " << Test2.x << ", " << Test2.y << ", " << Test2.z << "\n";
-    // std::cout << "Camera: " << Test3.x << ", " << Test3.y << ", " << Test3.z << "\n";
-
-    // Point P1(1, 0, 0);
-    // Point P2(0, 1, 0);
-    // Point P3(0, 0, 1);
-    // RasterToCamera(P1, &P1);
-    // RasterToCamera(P2, &P2);
-    // RasterToCamera(P3, &P3);
-    // std::cout << "Camera: " << P1.x << ", " << P1.y << ", " << P1.z << "\n";
-    // std::cout << "Camera: " << P2.x << ", " << P2.y << ", " << P2.z << "\n";
-    // std::cout << "Camera: " << P3.x << ", " << P3.y << ", " << P3.z << "\n";
-
-    // Matrix4x4 mat = Inverse(RasterToCamera.GetMatrix());
-    // std::cout << "RC Inv: \n" << mat.m[0][0] << ", " << mat.m[0][1] << ", " << mat.m[0][2] << ", " << mat.m[0][3] << "\n";
-    // std::cout << mat.m[1][0] << ", " << mat.m[1][1] << ", " << mat.m[1][2] << ", " << mat.m[1][3] << "\n";
-    // std::cout << mat.m[2][0] << ", " << mat.m[2][1] << ", " << mat.m[2][2] << ", " << mat.m[2][3] << "\n";
-    // std::cout << mat.m[3][0] << ", " << mat.m[3][1] << ", " << mat.m[3][2] << ", " << mat.m[3][3] << "\n";
-
 
 }
 
@@ -89,7 +59,6 @@ float RetinalCamera::GenerateRay( const CameraSample &sample, Ray * ray) const
 {
 	// The new Origin =  (sample.imageX, sample.imageY, zVals[sample.imageX + sample.imageY * rowL])
 	// the time should be set to 0
-    // std::cout << "RAY\n";
     int row = int( sample.imageY );
     int col = int( sample.imageX );
     float z = zValues[ row * xResolution + col ];
@@ -98,7 +67,7 @@ float RetinalCamera::GenerateRay( const CameraSample &sample, Ray * ray) const
     Point Pcamera;
     RasterToCamera(Pras, &Pcamera);
 
-    Vector Dras(NodalPoint - Pras);
+    Vector Dras(PupilCenter - Pras);
     Vector Dcam;
     RasterToCamera(Dras, &Dcam);
 
@@ -113,8 +82,9 @@ float RetinalCamera::GenerateRay( const CameraSample &sample, Ray * ray) const
         lensV *= PupilRadius;
 
         // compute new ray
-        Point Offset( 256.0 + lensU, 128.0 + lensV, 0.0);
-        Vector ODir( Offset - Pras );
+        Vector Offset( lensU, lensV, 0.0);
+        Point Perturb = PupilCenter + Offset;
+        Vector ODir( Perturb - Pras );
         *ray = Ray(Pras, ODir, 0., INFINITY);
 
         Cornea.ApplySnellLaw( ray );
@@ -139,7 +109,6 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
         RayDifferential *ray) const {
 
     // Generate raster and camera samples
-    // std::cout << "RAYDIFF\n";
     int row = int( sample.imageY );
     int col = int( sample.imageX );
     float z = zValues[ row * xResolution + col ];
@@ -149,7 +118,7 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
     Point Pcamera;
     RasterToCamera(Pras, &Pcamera);
 
-    Vector Dras(NodalPoint - Pras);
+    Vector Dras(PupilCenter - Pras);
     Vector Dcam;
     RasterToCamera(Dras, &Dcam);
 
@@ -173,11 +142,14 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
         lensU *= PupilRadius;
         lensV *= PupilRadius;
 
-        Point NodalOffset(256.0 + lensU, 128.0 + lensV, 0.0);
+        Vector Perturb(lensU, lensV, 0.0);
+
+
+        Point NodalOffset = PupilCenter + Perturb;
         Vector Odir( NodalOffset - Pras );
 
-        rxDir = NodalPoint - rxNew;
-        ryDir = NodalPoint - ryNew;
+        rxDir = PupilCenter - rxNew;
+        ryDir = PupilCenter - ryNew;
 
         Ray xRay(rxNew, rxDir, 0., INFINITY);
         Ray yRay(ryNew, ryDir, 0., INFINITY);
@@ -187,17 +159,13 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
         Cornea.ApplySnellLaw( &xRay );
         Cornea.ApplySnellLaw( &yRay );
 
-        // std::cout << r.o.x << ", " << r.o.y << ", " << r.o.z << "\n";
-        // std::cout << r.d.x << ", " << r.d.y << ", " << r.d.z << "\n";
         Vector ODcam;
         Vector RDcam;
         Point  Impact;
         RasterToCamera( Odir, &ODcam );
         RasterToCamera( r.d, &RDcam );
         RasterToCamera( r.o - r.d*5, &Impact );
-        // std::cout << Impact.x << ", " << Impact.y << ", " << Impact.z << "\n";
-        // std::cout << RDcam.x << ", " << RDcam.y << ", " << RDcam.z << "\n";
-        // *ray = RayDifferential( Pcamera, Normalize(ODcam), 0., INFINITY );
+
         *ray = RayDifferential( Impact, Normalize(RDcam), 0., INFINITY );
 
         rxNew = xRay.o;
@@ -208,8 +176,8 @@ float RetinalCamera::GenerateRayDifferential(const CameraSample &sample,
     }
     else
     {
-        rxDir = NodalPoint - rxNew;
-        ryDir = NodalPoint - ryNew;
+        rxDir = PupilCenter - rxNew;
+        ryDir = PupilCenter - ryNew;
     }
     
     

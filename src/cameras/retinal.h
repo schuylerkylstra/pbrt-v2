@@ -49,16 +49,11 @@ struct Lens
 
             // calculate transmition direction
             float dot = Dot(dir, n);
-            // std::cout << "DOT: " << dot << "\n";
 
             Vector t = dir * RefractiveIndex + n * ( dot * RefractiveIndex - sqrt(1 - RefractiveIndex * RefractiveIndex * ( 1 - dot * dot) ) );
-            // std::cout << "T before: " << t.x << ", " << t.y << ", " << t.z << "\n";
-            // std::cout << "Radical: " << 1 - dot * dot * RefractiveIndex * RefractiveIndex << "\n";
-            // t = t + n * ( dot * RefractiveIndex - sqrt(1 - RefractiveIndex * RefractiveIndex * ( 1 - dot * dot) ) );
-            // std::cout << "T after: " << t.x << ", " << t.y << ", " << t.z << "\n";
-
+            t = Normalize(t);
             // update the ray
-            r->o = Impact - t * LensRadius;
+            r->o = Impact; // - t * LensRadius;
             r->d = t;
         }
     }
@@ -114,7 +109,7 @@ private:
     Normal  *rNormals; 
     int     numCones, xResolution, yResolution;
     Vector  dxCamera, dyCamera;
-    Point   NodalPoint;
+    Point   PupilCenter;
     float   PupilRadius;
     Lens    Cornea;
     bool    zFlag, nFlag;

@@ -1,5 +1,5 @@
 Film "image" "integer xresolution" [512] "integer yresolution" [250] 
-"string filename" "ControlWithBlurNarrow400.exr"
+"string filename" "Control-Exam.exr"
 
 Sampler "lowdiscrepancy" "integer pixelsamples" [1]
 
